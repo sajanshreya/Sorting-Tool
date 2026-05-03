@@ -25,8 +25,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(mess
 log = logging.getLogger(__name__)
 
 # Load from environment variables (set in your cloud host or .env file)
-SHIPMENT_API_BASE  = os.environ['SHIPMENT_API_BASE']       # e.g. https://api.yourcompany.com
-SHIPMENT_API_TOKEN = os.environ['SHIPMENT_API_TOKEN']      # Bearer token
+SHIPMENT_API_BASE  = os.environ.get('SHIPMENT_API_BASE', '').rstrip('/')
+SHIPMENT_API_TOKEN = os.environ.get('SHIPMENT_API_TOKEN', '')
+if not SHIPMENT_API_BASE:
+    raise RuntimeError('SHIPMENT_API_BASE environment variable is not set')
+if not SHIPMENT_API_TOKEN:
+    raise RuntimeError('SHIPMENT_API_TOKEN environment variable is not set')
 DB_PATH            = os.environ.get('DB_PATH', 'sort_cache.db')
 RATE_LIMIT_RPS     = int(os.environ.get('RATE_LIMIT_RPS', '20'))  # max scans/second per IP
 
