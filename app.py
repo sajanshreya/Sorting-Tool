@@ -140,7 +140,8 @@ def fetch_shipment_address(shipment_id: str) -> dict:
 @app.get('/')
 def index():
     """Serve the scanner UI directly from Flask — no separate static host needed."""
-    return send_from_directory('.', 'index.html')
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    return send_from_directory(base_dir, 'index.html')
 
 
 @app.get('/api/health')
