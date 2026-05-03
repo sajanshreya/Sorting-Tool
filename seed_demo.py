@@ -2,10 +2,10 @@
 Seed sort_cache.db with sample data for the MVP demo.
 In production, this data comes from your Google Sheet via sync_sheet.py.
 """
-import sqlite3
+import sqlite3, os
 from datetime import datetime
 
-DB_PATH = 'sort_cache.db'
+DB_PATH = os.environ.get('DB_PATH', 'sort_cache.db')
 now = datetime.utcnow().isoformat()
 
 conn = sqlite3.connect(DB_PATH)
