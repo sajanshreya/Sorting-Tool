@@ -1,13 +1,9 @@
-# render.yaml — Render Blueprint
-
 services:
 
-  # ── Service 1: Mock Shipment API ───────────────────────────────────────────
   - type: web
     name: shipsort-mock
     env: python
     plan: free
-    rootDir: shipment-sorter
     buildCommand: pip install flask gunicorn
     startCommand: gunicorn mock_shipment_api:app --bind 0.0.0.0:$PORT --workers 1
     envVars:
@@ -15,12 +11,10 @@ services:
         value: demo-token-2026
     healthCheckPath: /v1/health
 
-  # ── Service 2: Main App (backend + scanner UI) ─────────────────────────────
   - type: web
     name: shipsort-app
     env: python
     plan: free
-    rootDir: shipment-sorter
     buildCommand: pip install -r requirements.txt && python seed_demo.py
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 30
     envVars:
