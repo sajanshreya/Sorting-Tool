@@ -1,22 +1,13 @@
 # render.yaml — Render Blueprint
-# Deploys two free services from this single repo:
-#   1. shipsort-mock  → mock shipment API  (port 9100 locally, Render manages port)
-#   2. shipsort-app   → main Flask backend + scanner UI
-#
-# Deploy steps:
-#   1. Push this folder to a GitHub repo (public or private)
-#   2. Go to render.com → New → Blueprint → connect your repo
-#   3. Render creates both services automatically
-#   4. After first deploy, copy shipsort-mock's URL into shipsort-app's
-#      SHIPMENT_API_BASE env var (see NOTE below)
 
 services:
 
   # ── Service 1: Mock Shipment API ───────────────────────────────────────────
   - type: web
     name: shipsort-mock
-    runtime: python
+    env: python
     plan: free
+    rootDir: shipment-sorter
     buildCommand: pip install flask gunicorn
     startCommand: gunicorn mock_shipment_api:app --bind 0.0.0.0:$PORT --workers 1
     envVars:
@@ -27,18 +18,16 @@ services:
   # ── Service 2: Main App (backend + scanner UI) ─────────────────────────────
   - type: web
     name: shipsort-app
-    runtime: python
+    env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: python seed_demo.py && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 30
+    rootDir: shipment-sorter
+    buildCommand: pip install -r requirements.txt && python seed_demo.py
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 30
     envVars:
       - key: SHIPMENT_API_TOKEN
         value: demo-token-2026
       - key: DB_PATH
         value: /opt/render/project/src/sort_cache.db
-      # NOTE: After deploying shipsort-mock, replace the value below with
-      # your actual shipsort-mock URL, e.g. https://shipsort-mock.onrender.com
-      # Then redeploy shipsort-app.
       - key: SHIPMENT_API_BASE
         value: https://shipsort-mock.onrender.com/v1
     healthCheckPath: /api/health
