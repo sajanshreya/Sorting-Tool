@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>ShipSort — Sorting System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #0c0c0e;
+    --bg2:      #13141a;
+    --bg3:      #1c1d26;
+    --border:   #2a2b36;
+    --accent:   #f5a623;
+    --accent2:  #ff6b35;
+    --ok:       #22c55e;
+    --err:      #ef4444;
+    --warn:     #f59e0b;
+    --text:     #e8e8f0;
+    --muted:    #6b6c7e;
+    --mono:     'IBM Plex Mono', monospace;
+    --sans:     'IBM Plex Sans', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); }
+
+  /* HEADER */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px; border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .logo { font-family: var(--mono); font-size: 18px; font-weight: 700; letter-spacing: 0.08em; }
+  .logo span { color: var(--accent); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .header-right { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); font-family: var(--mono); }
+
+  /* MAIN LAYOUT */
+  main {
+    max-width: 680px; margin: 0 auto; padding: 32px 20px;
+    display: flex; flex-direction: column; gap: 24px; min-height: calc(100vh - 57px);
+  }
+
+  /* SCAN INPUT BOX */
+  .scan-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  }
+  .scan-card-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+    color: var(--muted); text-transform: uppercase;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .scan-card-header::before { content: '//'; color: var(--accent); }
+  .scan-body { padding: 20px; display: flex; gap: 12px; }
+  #shipment-input {
+    flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; font-family: var(--mono); font-size: 16px; font-weight: 600;
+    color: var(--text); outline: none; letter-spacing: 0.04em;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  #shipment-input::placeholder { color: var(--muted); font-weight: 400; }
+  #shipment-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(245,166,35,0.12); }
+  #scan-btn {
+    background: var(--accent); color: #0c0c0e; border: none; border-radius: 8px;
+    padding: 14px 24px; font-family: var(--mono); font-size: 14px; font-weight: 700;
+    letter-spacing: 0.06em; cursor: pointer; white-space: nowrap;
+    transition: background 0.15s, transform 0.1s; text-transform: uppercase;
+  }
+  #scan-btn:hover { background: #ffb84d; }
+  #scan-btn:active { transform: scale(0.97); }
+  #scan-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; }
+
+  /* RESULT PANEL */
+  #result-panel {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden; display: none;
+    animation: slideUp 0.2s ease-out;
+  }
+  @keyframes slideUp { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  #result-panel.visible { display: block; }
+
+  .result-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+    color: var(--muted); text-transform: uppercase; display: flex; align-items: center; gap: 8px;
+  }
+  .result-header::before { content: '//'; color: var(--accent); }
+
+  .result-body { padding: 28px 24px; }
+
+  /* BIG SORT CODE */
+  .sort-code-display {
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+    padding: 32px 24px; margin-bottom: 24px; position: relative; overflow: hidden;
+  }
+  .sort-code-display::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(245,166,35,0.05) 0%, transparent 60%);
+  }
+  #sort-code-text {
+    font-family: var(--mono); font-size: clamp(56px, 15vw, 96px); font-weight: 700;
+    color: var(--accent); letter-spacing: 0.06em; line-height: 1;
+    text-shadow: 0 0 40px rgba(245,166,35,0.3);
+  }
+  #sort-code-text.unknown { color: var(--err); text-shadow: 0 0 40px rgba(239,68,68,0.3); font-size: clamp(32px, 8vw, 52px); }
+
+  /* META GRID */
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 480px) { .meta-grid { grid-template-columns: 1fr; } }
+  .meta-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; }
+  .meta-label { font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+  .meta-value { font-family: var(--mono); font-size: 13px; color: var(--text); font-weight: 600; word-break: break-all; }
+  .meta-value.address { font-size: 12px; font-weight: 400; line-height: 1.5; }
+
+  /* CONFIDENCE BADGE */
+  .confidence-badge {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+    border-radius: 20px; font-family: var(--mono); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.06em; border: 1px solid;
+  }
+  .confidence-badge.high  { background: rgba(34,197,94,0.1);  border-color: rgba(34,197,94,0.3);  color: var(--ok); }
+  .confidence-badge.mid   { background: rgba(245,158,11,0.1);  border-color: rgba(245,158,11,0.3);  color: var(--warn); }
+  .confidence-badge.low   { background: rgba(239,68,68,0.1);   border-color: rgba(239,68,68,0.3);   color: var(--err); }
+  .confidence-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* CLEAR BUTTON */
+  #clear-btn {
+    width: 100%; padding: 10px; background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted); font-family: var(--mono); font-size: 12px;
+    cursor: pointer; letter-spacing: 0.06em; transition: border-color 0.15s, color 0.15s;
+    text-transform: uppercase;
+  }
+  #clear-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* LOADING */
+  #loading {
+    display: none; align-items: center; justify-content: center; gap: 12px;
+    padding: 32px; color: var(--muted); font-family: var(--mono); font-size: 13px;
+  }
+  #loading.visible { display: flex; }
+  .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ERROR */
+  #error-box {
+    display: none; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 8px; padding: 14px 18px; font-family: var(--mono); font-size: 13px;
+    color: #fca5a5; gap: 10px; align-items: flex-start;
+  }
+  #error-box.visible { display: flex; }
+
+  /* SCAN LOG */
+  .log-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .log-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .log-header-left { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  .log-header-left::before { content: '//'; color: var(--accent); }
+  #log-count { font-family: var(--mono); font-size: 11px; background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; color: var(--muted); }
+  #scan-log { max-height: 220px; overflow-y: auto; }
+  .log-empty { padding: 24px; text-align: center; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+  .log-row {
+    display: grid; grid-template-columns: 80px 1fr 90px 50px; align-items: center;
+    padding: 10px 20px; border-bottom: 1px solid var(--border); gap: 12px;
+    transition: background 0.1s;
+  }
+  .log-row:last-child { border-bottom: none; }
+  .log-row:hover { background: var(--bg3); }
+  .log-time { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .log-ship-id { font-family: var(--mono); font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .log-code { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--accent); text-align: right; }
+  .log-code.fail { color: var(--err); font-size: 11px; }
+  .log-method { font-size: 10px; font-family: var(--mono); padding: 2px 6px; border-radius: 4px; text-align: center; }
+  .log-method.pincode { background: rgba(34,197,94,0.1); color: var(--ok); }
+  .log-method.keyword { background: rgba(245,158,11,0.1); color: var(--warn); }
+  .log-method.fuzzy   { background: rgba(99,102,241,0.1); color: #a5b4fc; }
+  .log-method.fail    { background: rgba(239,68,68,0.1);  color: var(--err); }
+
+  /* SCROLLBAR */
+  #scan-log::-webkit-scrollbar { width: 4px; }
+  #scan-log::-webkit-scrollbar-track { background: transparent; }
+  #scan-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SHIP<span>SORT</span></div>
+  <div class="header-right">
+    <div class="status-dot" id="conn-dot"></div>
+    <span id="conn-label">CONNECTED</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- SCAN INPUT -->
+  <div class="scan-card">
+    <div class="scan-card-header">Scan or enter shipment ID</div>
+    <div class="scan-body">
+      <input type="text" id="shipment-input" placeholder="e.g. SHP202600012345" autocomplete="off" spellcheck="false"/>
+      <button id="scan-btn" onclick="lookup()">SCAN</button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <span>Looking up shipment...</span>
+  </div>
+
+  <!-- ERROR -->
+  <div id="error-box">
+    <span>⚠</span>
+    <span id="error-msg">Something went wrong.</span>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result-panel">
+    <div class="result-header">Sort result</div>
+    <div class="result-body">
+
+      <div class="sort-code-display">
+        <div id="sort-code-text">—</div>
+      </div>
+
+      <div class="meta-grid">
+        <div class="meta-item">
+          <div class="meta-label">Shipment ID</div>
+          <div class="meta-value" id="r-shipid">—</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Rider zone</div>
+          <div class="meta-value" id="r-zone">—</div>
+        </div>
+        <div class="meta-item" style="grid-column: 1 / -1;">
+          <div class="meta-label">Seller address</div>
+          <div class="meta-value address" id="r-address">—</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Pincode</div>
+          <div class="meta-value" id="r-pincode">—</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Match method</div>
+          <div id="r-method">—</div>
+        </div>
+      </div>
+
+      <button id="clear-btn" onclick="clearResult()">CLEAR &amp; SCAN NEXT</button>
+    </div>
+  </div>
+
+  <!-- SCAN LOG -->
+  <div class="log-card">
+    <div class="log-header">
+      <div class="log-header-left">Session log</div>
+      <span id="log-count">0 scans</span>
+    </div>
+    <div id="scan-log"><div class="log-empty">No scans yet this session</div></div>
+  </div>
+
+</main>
+
+<script>
+const API_BASE = window.API_BASE || '';  // Set this to your backend URL e.g. 'https://your-app.com'
+
+let scanLog = [];
+
+async function lookup() {
+  const input = document.getElementById('shipment-input');
+  const shipmentId = input.value.trim();
+  if (!shipmentId) { input.focus(); return; }
+
+  setLoading(true);
+  clearResult(false);
+
+  try {
+    const res = await fetch(`${API_BASE}/api/scan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shipment_id: shipmentId })
+    });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
+
+    showResult(data, shipmentId);
+    addToLog(shipmentId, data);
+
+  } catch (err) {
+    showError(err.message);
+    addToLog(shipmentId, null);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function showResult(data, shipmentId) {
+  const panel = document.getElementById('result-panel');
+  const codeEl = document.getElementById('sort-code-text');
+
+  if (data.sort_code && data.sort_code !== 'UNKNOWN') {
+    codeEl.textContent = data.sort_code;
+    codeEl.className = '';
+  } else {
+    codeEl.textContent = 'UNMATCHED';
+    codeEl.className = 'unknown';
+  }
+
+  document.getElementById('r-shipid').textContent  = shipmentId;
+  document.getElementById('r-zone').textContent    = data.rider_zone || '—';
+  document.getElementById('r-address').textContent = data.address || '—';
+  document.getElementById('r-pincode').textContent = data.pincode || '—';
+
+  // Confidence badge
+  const conf = data.confidence || 0;
+  const method = data.match_method || 'none';
+  const level = conf >= 95 ? 'high' : conf >= 75 ? 'mid' : 'low';
+  const labels = { pincode: 'PINCODE', keyword: 'KEYWORD', fuzzy: 'FUZZY', none: 'NO MATCH' };
+  document.getElementById('r-method').innerHTML =
+    `<span class="confidence-badge ${level}"><span class="confidence-dot"></span>${labels[method] || method} ${conf}%</span>`;
+
+  panel.classList.add('visible');
+
+  // Flash screen green/red
+  if (data.sort_code && data.sort_code !== 'UNKNOWN') {
+    document.body.style.backgroundColor = 'rgba(34,197,94,0.04)';
+    setTimeout(() => document.body.style.backgroundColor = '', 300);
+  }
+}
+
+function clearResult(focusInput = true) {
+  document.getElementById('result-panel').classList.remove('visible');
+  document.getElementById('error-box').classList.remove('visible');
+  if (focusInput) {
+    const inp = document.getElementById('shipment-input');
+    inp.value = '';
+    inp.focus();
+  }
+}
+
+function showError(msg) {
+  const box = document.getElementById('error-box');
+  document.getElementById('error-msg').textContent = msg;
+  box.classList.add('visible');
+}
+
+function setLoading(on) {
+  document.getElementById('loading').classList.toggle('visible', on);
+  document.getElementById('scan-btn').disabled = on;
+}
+
+function addToLog(shipmentId, data) {
+  const now = new Date();
+  const time = now.toTimeString().slice(0,8);
+  scanLog.unshift({ time, shipmentId, data });
+  if (scanLog.length > 100) scanLog.pop();
+
+  const container = document.getElementById('scan-log');
+  const countEl   = document.getElementById('log-count');
+  countEl.textContent = `${scanLog.length} scan${scanLog.length > 1 ? 's' : ''}`;
+
+  container.innerHTML = scanLog.map(entry => {
+    const d = entry.data;
+    const code   = d ? (d.sort_code || 'UNKNOWN') : 'ERROR';
+    const method = d ? (d.match_method || 'none') : 'fail';
+    const isFail = !d || code === 'UNKNOWN';
+    return `<div class="log-row">
+      <span class="log-time">${entry.time}</span>
+      <span class="log-ship-id">${entry.shipmentId}</span>
+      <span class="log-code ${isFail ? 'fail' : ''}">${code}</span>
+      <span class="log-method ${isFail ? 'fail' : method}">${method.toUpperCase()}</span>
+    </div>`;
+  }).join('');
+}
+
+// Enter key support
+document.getElementById('shipment-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') lookup();
+});
+
+// Auto-focus on load
+window.addEventListener('load', () => {
+  document.getElementById('shipment-input').focus();
+
+  // Check backend connectivity
+  fetch(`${API_BASE}/api/health`)
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(() => {
+      document.getElementById('conn-dot').style.background = 'var(--ok)';
+      document.getElementById('conn-dot').style.boxShadow = '0 0 8px var(--ok)';
+      document.getElementById('conn-label').textContent = 'CONNECTED';
+    })
+    .catch(() => {
+      document.getElementById('conn-dot').style.background = 'var(--err)';
+      document.getElementById('conn-dot').style.boxShadow = '0 0 8px var(--err)';
+      document.getElementById('conn-label').textContent = 'OFFLINE';
+    });
+});
+</script>
+</body>
+</html>
